@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Foto - MetaData</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    :root {
+      --primary: #2563eb;
+      --accent: #0ea5e9;
+      --success: #10b981;
+      --bg-gradient: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    }
+
+    body {
+      margin: 0;
+      padding: 40px 20px;
+      min-height: 100vh;
+      background: var(--bg-gradient);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      color: #1e293b;
+    }
+
+    .container { max-width: 900px; margin: auto; }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      border-radius: 32px;
+      padding: 40px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
+    }
+
+    .header { text-align: center; margin-bottom: 30px; }
+    .header h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      background: linear-gradient(to right, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin: 0;
+    }
+
+    
+    .upload-zone {
+      border: 2px dashed #cbd5e1;
+      border-radius: 24px;
+      padding: 40px;
+      text-align: center;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      background: rgba(255,255,255,0.4);
+      cursor: pointer;
+      position: relative;
+    }
+    .upload-zone:hover {
+      border-color: var(--primary);
+      background: rgba(255,255,255,0.8);
+      transform: scale(1.01);
+    }
+    #upload { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+   
+    #preview-container { margin-top: 30px; display: none; animation: slideUp 0.6s ease-out; }
+    #preview {
+      width: 100%;
+      max-height: 450px;
+      object-fit: contain;
+      border-radius: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      background: #f8fafc;
+    }
+
+  
+    .gps-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #dcfce7;
+      color: #166534;
+      padding: 8px 16px;
+      border-radius: 100px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      margin-top: 15px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .gps-badge:hover { background: #bbf7d0; transform: translateY(-2px); }
+
+    
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+      margin-top: 25px;
+    }
+
+    .meta-item {
+      background: white;
+      padding: 16px 20px;
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      border: 1px solid #f1f5f9;
+      transition: all 0.2s;
+    }
+    .meta-item:hover { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); }
+
+    .icon-box {
+      width: 42px;
+      height: 42px;
+      background: #eff6ff;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary);
+      font-size: 1.1rem;
+    }
+
+    .meta-content .label { font-size: 0.7rem; text-transform: uppercase; color: #94a3b8; font-weight: 800; }
+    .meta-content .value { font-size: 0.95rem; font-weight: 600; color: #1e293b; word-break: break-all; }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .footer { text-align: center; margin-top: 40px; color: #94a3b8; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="glass-card">
+    <div class="header">
+      <h1><i class="fa-solid fa-location-crosshairs"></i> Foto Meta Data</h1>
+      <p>Mengambil Meta Data Dari Sebuah Foto</p>
+    </div>
+
+    <div class="upload-zone">
+      <input type="file" id="upload" accept="image/*">
+      <i class="fa-solid fa-wand-magic-sparkles" style="font-size: 2.5rem; color: var(--primary); margin-bottom: 15px;"></i>
+      <h3>Send Your Foto</h3>
+      <p>Data Akan Otomatis Muncul Setelah Upload foto</p>
+    </div>
+
+    <div id="preview-container">
+      <img id="preview">
+      <div id="gps-action-area" style="text-align: center;"></div>
+      <div class="meta-grid" id="metadata-display"></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Powered By &bull; <strong>xDonzCode 2026</strong>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
+<script>
+  const upload = document.getElementById("upload");
+  const preview = document.getElementById("preview");
+  const previewContainer = document.getElementById("preview-container");
+  const metadataDisplay = document.getElementById("metadata-display");
+  const gpsActionArea = document.getElementById("gps-action-area");
+
+  function toDecimal(number, ref) {
+    let decimal = number[0] + number[1] / 60 + number[2] / 3600;
+    if (ref === "S" || ref === "W") decimal = decimal * -1;
+    return decimal.toFixed(6);
+  }
+
+  upload.addEventListener("change", function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(event) {
+      preview.src = event.target.result;
+      previewContainer.style.display = "block";
+      gpsActionArea.innerHTML = "";
+
+      EXIF.getData(file, function() {
+        const tags = EXIF.getAllTags(this);
+        metadataDisplay.innerHTML = "";
+
+        
+        if (tags.GPSLatitude && tags.GPSLongitude) {
+          const lat = toDecimal(tags.GPSLatitude, tags.GPSLatitudeRef);
+          const lon = toDecimal(tags.GPSLongitude, tags.GPSLongitudeRef);
+          
+          gpsActionArea.innerHTML = `
+            <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank" class="gps-badge">
+              <i class="fa-solid fa-map-location-dot"></i> Lihat di Google Maps: ${lat}, ${lon}
+            </a>
+          `;
+
+          addMetaItem("Latitude", lat, "fa-location-dot");
+          addMetaItem("Longitude", lon, "fa-location-crosshairs");
+          if (tags.GPSAltitude) addMetaItem("Ketinggian", `${tags.GPSAltitude.toFixed(2)}m`, "fa-mountain");
+        }
+
+       
+        if (tags.Make) addMetaItem("Brand", tags.Make, "fa-industry");
+        if (tags.Model) addMetaItem("Model", tags.Model, "fa-mobile-screen-button");
+        if (tags.DateTime) addMetaItem("Waktu", tags.DateTime, "fa-calendar-day");
+        if (tags.ExposureTime) addMetaItem("Shutter", `1/${Math.round(1/tags.ExposureTime)}s`, "fa-stopwatch");
+        if (tags.FNumber) addMetaItem("Aperture", `f/${tags.FNumber}`, "fa-eye");
+        if (tags.ISOSpeedRatings) addMetaItem("ISO", tags.ISOSpeedRatings, "fa-bolt");
+        if (tags.FocalLength) addMetaItem("Fokus", `${tags.FocalLength}mm`, "fa-magnifying-glass");
+        if (tags.ExifImageWidth) addMetaItem("Resolusi", `${tags.ExifImageWidth} x ${tags.ExifImageHeight} px`, "fa-vector-square");
+        if (tags.Software) addMetaItem("Software", tags.Software, "fa-laptop-code");
+
+        if (Object.keys(tags).length === 0) {
+          metadataDisplay.innerHTML = `<div style="grid-column:1/-1; color:#94a3b8; text-align:center;">Maaf, metadata tidak ditemukan.</div>`;
+        }
+      });
+    };
+    reader.readAsDataURL(file);
+  });
+
+  function addMetaItem(label, value, icon) {
+    const html = `
+      <div class="meta-item">
+        <div class="icon-box"><i class="fa-solid ${icon}"></i></div>
+        <div class="meta-content">
+          <div class="label">${label}</div>
+          <div class="value">${value}</div>
+        </div>
+      </div>
+    `;
+    metadataDisplay.innerHTML += html;
+  }
+</script>
+
+</body>
+</html>
